@@ -134,19 +134,19 @@ const (
 func (l Level) String() string {
 	switch l {
 	case TraceLevel:
-		return "trace"
+		return LevelTraceValue
 	case DebugLevel:
-		return "debug"
+		return LevelDebugValue
 	case InfoLevel:
-		return "info"
+		return LevelInfoValue
 	case WarnLevel:
-		return "warn"
+		return LevelWarnValue
 	case ErrorLevel:
-		return "error"
+		return LevelErrorValue
 	case FatalLevel:
-		return "fatal"
+		return LevelFatalValue
 	case PanicLevel:
-		return "panic"
+		return LevelPanicValue
 	case Disabled:
 		return "disabled"
 	case NoLevel:
@@ -223,6 +223,7 @@ func (l Logger) Output(w io.Writer) Logger {
 	l2 := New(w)
 	l2.level = l.level
 	l2.sampler = l.sampler
+	l2.stack = l.stack
 	if len(l.hooks) > 0 {
 		l2.hooks = append(l2.hooks, l.hooks...)
 	}
@@ -392,7 +393,7 @@ func (l *Logger) Log() *Event {
 // Arguments are handled in the manner of fmt.Print.
 func (l *Logger) Print(v ...interface{}) {
 	if e := l.Debug(); e.Enabled() {
-		e.Msg(fmt.Sprint(v...))
+		e.CallerSkipFrame(1).Msg(fmt.Sprint(v...))
 	}
 }
 
@@ -400,7 +401,7 @@ func (l *Logger) Print(v ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Printf(format string, v ...interface{}) {
 	if e := l.Debug(); e.Enabled() {
-		e.Msg(fmt.Sprintf(format, v...))
+		e.CallerSkipFrame(1).Msg(fmt.Sprintf(format, v...))
 	}
 }
 
@@ -412,7 +413,7 @@ func (l Logger) Write(p []byte) (n int, err error) {
 		// Trim CR added by stdlog.
 		p = p[0 : n-1]
 	}
-	l.Log().Msg(string(p))
+	l.Log().CallerSkipFrame(1).Msg(string(p))
 	return
 }
 
